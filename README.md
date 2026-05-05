@@ -95,7 +95,5 @@ cd Anti-AI-Visometer-Kids
 git init
 git add .
 git commit -m "Анти-ИИ Визометр - детская версия"
-git remote add origin https://github.com/ВАШ_ЛОГИН/Anti-AI-Visometer-Kids.git
-git branch -M main
-git push -u origin main
-🌐 Готовый адрес
+
+🌐 Готовый адрес https://anti-ai-visometer-kids.vercel.app/
