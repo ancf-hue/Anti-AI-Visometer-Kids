@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Анти-ИИ Визометр | Распознай дипфейк</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        :root {
+            --neon-blue: #00f2fe;
+            --neon-purple: #a18cd1;
+            --correct: #00ff88;
+            --wrong: #ff4b4b;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: radial-gradient(circle at 20% 30%, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, sans-serif;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 48px;
+            padding: 40px;
+            width: 100%;
+            max-width: 1100px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        }
+        
+        .screen.hidden { display: none; }
+        
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #fff, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 15px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+        }
+        
+        .image-container {
+            display: flex;
+            gap: 25px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .img-card {
+            flex: 1;
+            min-width: 250px;
+            background: #f5f5f5;
+            border-radius: 24px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid #ddd;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .img-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0,242,254,0.5);
+        }
+        
+        .img-card canvas {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            background: white;
+            display: block;
+        }
+        
+        .img-label {
+            padding: 12px;
+            text-align: center;
+            background: #2c2c3e;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 60px;
+            margin-bottom: 30px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .main-btn {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            padding: 16px 50px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .main-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,242,254,0.3);
+        }
+        
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .difficulty-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 25px;
+            border-radius: 40px;
+            cursor: pointer;
+            color: white;
+        }
+        
+        .difficulty-btn.active {
+            background: linear-gradient(135deg, rgba(0,242,254,0.2), rgba(161,140,209,0.2));
+            border-color: var(--neon-blue);
+        }
+        
+        .feedback-hint {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 4px solid var(--neon-blue);
+            color: white;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .result-score {
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        #final-percent {
+            font-size: 4rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00ff88, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        
+        #final-score {
+            font-size: 1.5rem;
+            color: white;
+            margin-top: 10px;
+        }
+        
+        #final-rank {
+            font-size: 2.5rem;
+            text-align: center;
+            color: white !important;
+            text-shadow: 0 0 20px var(--neon-blue);
+            margin-bottom: 20px;
+        }
+        
+        #final-desc {
+            text-align: center;
+            color: white !important;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 16px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.02);
+        }
+        
+        /* Стили для блока поддержки */
+        .support-block {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: white;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .support-block h3 {
+            color: var(--neon-blue);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .phone-number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #00ff88;
+            margin: 10px 0;
+            letter-spacing: 2px;
+        }
+        
+        .copy-btn {
+            background: rgba(0, 242, 254, 0.2);
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(0, 242, 254, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .catalog-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--neon-purple);
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        
+        .catalog-link:hover {
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+        
+        @media (max-width: 768px) {
+            .glass-card { padding: 25px; }
+            .image-container { flex-direction: column; }
+            .vs-divider { display: none; }
+            .img-card canvas { height: 220px; }
+            #final-rank { font-size: 1.8rem; }
+            #final-percent { font-size: 3rem; }
+            .support-block { font-size: 0.85rem; padding: 15px; }
+            .phone-number { font-size: 1.1rem; }
+        }
+        
+        .hidden { display: none; }
+        .correct-border { border-color: #00ff88; box-shadow: 0 0 20px #00ff88; }
+        .wrong-border { border-color: #ff4b4b; box-shadow: 0 0 20px #ff4b4b; }
+        
+        /* Яркие цвета для результатов */
+        .result-expert { color: #ffd700 !important; text-shadow: 0 0 15px #ffd700; }
+        .result-advanced { color: #00f2fe !important; text-shadow: 0 0 15px #00f2fe; }
+        .result-learner { color: #ffaa44 !important; text-shadow: 0 0 10px #ffaa44; }
+        .result-risk { color: #ff6b6b !important; text-shadow: 0 0 10px #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="glass-card">
+        <div id="start-screen" class="screen">
+            <img src="favicon.ico" alt="Логотип" style="width: 80px; height: 80px; display: block; margin: 0 auto 20px;">
+            <h1>АНТИ-ИИ ВИЗОМЕТР</h1>
+            <p class="subtitle">Проверь свою способность отличать реальность от нейросетей</p>
+            <div class="difficulty-selector">
+                <button class="difficulty-btn active" data-diff="easy">🟢 10 раундов</button>
+            </div>
+            <button id="startBtn" class="main-btn">Начать тест</button>
+            
+            <!-- Блок поддержки проекта -->
+            <div class="support-block">
+                <h3>🤝 ПОДДЕРЖАТЬ ПРОЕКТ</h3>
+                <p>Приложение бесплатное. Было и останется.</p>
+                <p>Если проект помог вам или вашим близким — можете поддержать разработку добровольным переводом.</p>
+                
+                <p style="margin: 15px 0 5px;"><strong>📱 ПЕРЕВОД ПО НОМЕРУ ТЕЛЕФОНА:</strong></p>
+                <div class="phone-number" id="phoneNum">8-920-227-56-76</div>
+                <button class="copy-btn" id="copyBtn">📋 Копировать номер</button>
+                <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">✅ Деньги придут мгновенно. Без комиссии. Безопасно.</p>
+                
+                <p style="margin-top: 15px;">❤️ Спасибо за поддержку!</p>
+                
+                <a href="https://ancf-hue.github.io/" target="_blank" class="catalog-link">
+                    🌟 👉 Каталог бесплатных офлайн-приложений Anti-AI Shield
+                </a>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div class="stats">
+                <span id="progress">Раунд 1/10</span>
+                <span id="score">🎯 Счёт: 0</span>
+            </div>
+            <div class="image-container">
+                <div class="img-card" data-choice="0">
+                    <canvas id="canvas0" width="400" height="300"></canvas>
+                    <div class="img-label">ИЗОБРАЖЕНИЕ A</div>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="img-card" data-choice="1">
+                    <canvas id="canvas1" width="400" height="300"></canvas>
+                    <div class="img-label">ИЗОБРАЖЕНИЕ B</div>
+                </div>
+            </div>
+            <p style="text-align: center; color: white;">👆 Нажми на изображение, которое считаешь <strong>РЕАЛЬНЫМ (ЧЕЛОВЕК)</strong></p>
+        </div>
+
+        <div id="feedback-screen" class="screen hidden">
+            <div style="font-size: 5rem; text-align: center;" id="feedback-icon">✅</div>
+            <h2 id="feedback-title" style="text-align: center;">ПРАВИЛЬНО!</h2>
+            <div class="feedback-hint">
+                <p id="feedback-text"></p>
+            </div>
+            <button id="nextBtn" class="main-btn">Следующий раунд →</button>
+        </div>
+
+        <div id="result-screen" class="screen hidden">
+            <div style="font-size: 5rem; text-align: center;" id="result-icon">🏆</div>
+            <h2 id="final-rank">Эксперт</h2>
+            <div class="result-score">
+                <span id="final-percent">0%</span>
+                <div id="final-score">0 из 10</div>
+            </div>
+            <p id="final-desc"></p>
+            <div class="result-actions">
+                <button id="restartBtn" class="main-btn">🔄 Пройти ещё раз</button>
+                <button id="shareBtn" class="secondary-btn">📤 Поделиться</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 10 РАЗНЫХ РЕАЛЬНЫХ ЛИЦ ==========
+        function drawReal1(ctx, w, h) { // Мужчина, 30 лет, улыбка
+            ctx.fillStyle = '#f0e6d3'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#e8b88a'; ctx.beginPath(); ctx.ellipse(w/2, h/2, w*0.28, h*0.38, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(w*0.35, h*0.42, w*0.07, h*0.055, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.65, h*0.42, w*0.07, h*0.055, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#4a6741'; ctx.beginPath(); ctx.arc(w*0.35, h*0.42, w*0.035, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.65, h*0.42, w*0.035, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(w*0.35, h*0.42, w*0.018, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.65, h*0.42, w*0.018, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w*0.33, h*0.40, w*0.008, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.63, h*0.40, w*0.008, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#c08552'; ctx.beginPath(); ctx.moveTo(w*0.5, h*0.45); ctx.lineTo(w*0.47, h*0.55); ctx.lineTo(w*0.53, h*0.55); ctx.fill();
+            ctx.fillStyle = '#c94f4f'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.64, w*0.06, h*0.035, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#5d4037'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.22, w*0.32, h*0.14, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2e7d32'; ctx.font = `bold ${Math.floor(w*0.06)}px sans-serif`; ctx.fillText(`ЧЕЛОВЕК`, w*0.02, h*0.08);
+        }
+        
+        function drawReal2(ctx, w, h) { // Женщина, 25 лет, серьёзная
+            ctx.fillStyle = '#f5e6d0'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#f0c8a0'; ctx.beginPath(); ctx.ellipse(w/2, h/2, w*0.27, h*0.36, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(w*0.36, h*0.43, w*0.065, h*0.05, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.64, h*0.43, w*0.065, h*0.05, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#3a5c3a'; ctx.beginPath(); ctx.arc(w*0.36, h*0.43, w*0.033, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.64, h*0.43, w*0.033, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(w*0.36, h*0.43, w*0.016, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.64, h*0.43, w*0.016, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#e8a87c'; ctx.beginPath(); ctx.moveTo(w*0.5, h*0.46); ctx.lineTo(w*0.48, h*0.55); ctx.lineTo(w*0.52, h*0.55); ctx.fill();
+            ctx.fillStyle = '#d45a5a'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.63, w*0.055, h*0.03, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#8b5a2b'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.23, w*0.3, h*0.13, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2e7d32'; ctx.font = `bold ${Math.floor(w*0.06)}px sans-serif`; ctx.fillText(`ЧЕЛОВЕК`, w*0.02, h*0.08);
+        }
+        
+        function drawReal3(ctx, w, h) { // Ребёнок, 8 лет
+            ctx.fillStyle = '#faf0e0'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#f5d0a8'; ctx.beginPath(); ctx.ellipse(w/2, h/2, w*0.26, h*0.35, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(w*0.37, h*0.44, w*0.07, h*0.058, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.63, h*0.44, w*0.07, h*0.058, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#5a7a4a'; ctx.beginPath(); ctx.arc(w*0.37, h*0.44, w*0.038, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.63, h*0.44, w*0.038, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(w*0.37, h*0.44, w*0.02, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.63, h*0.44, w*0.02, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w*0.35, h*0.42, w*0.009, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.61, h*0.42, w*0.009, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#d09560'; ctx.beginPath(); ctx.moveTo(w*0.5, h*0.47); ctx.lineTo(w*0.48, h*0.56); ctx.lineTo(w*0.52, h*0.56); ctx.fill();
+            ctx.fillStyle = '#c94f4f'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.66, w*0.07, h*0.04, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#6b4c3c'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.23, w*0.31, h*0.13, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2e7d32'; ctx.font = `bold ${Math.floor(w*0.06)}px sans-serif`; ctx.fillText(`ЧЕЛОВЕК`, w*0.02, h*0.08);
+        }
+        
+        // ========== 10 РАЗНЫХ ИИ-ЛИЦ ==========
+        function drawAI1(ctx, w, h) {
+            ctx.fillStyle = '#e8e0d5'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#e8b88a'; ctx.beginPath(); ctx.ellipse(w*0.52, h*0.5, w*0.28, h*0.36, 0.05, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#f5f5f0'; ctx.beginPath(); ctx.ellipse(w*0.34, h*0.41, w*0.07, h*0.058, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.66, h*0.44, w*0.06, h*0.05, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2c2c2c'; ctx.beginPath(); ctx.arc(w*0.34, h*0.41, w*0.038, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.66, h*0.44, w*0.028, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#cc8866'; for(let i=0;i<3;i++) ctx.fillRect(w*(0.2+i*0.25), h*0.85, w*0.08, 3);
+            ctx.fillStyle = '#c62828'; ctx.font = `bold ${Math.floor(w*0.07)}px sans-serif`; ctx.fillText(`ИИ`, w*0.02, h*0.08);
+        }
+        
+        function drawAI2(ctx, w, h) {
+            ctx.fillStyle = '#e0d8cc'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#f0be8f'; ctx.beginPath(); ctx.ellipse(w*0.48, h*0.5, w*0.27, h*0.35, -0.03, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#f0f0ea'; ctx.beginPath(); ctx.ellipse(w*0.35, h*0.42, w*0.068, h*0.055, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.65, h*0.42, w*0.068, h*0.055, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#3a3a3a'; ctx.beginPath(); ctx.arc(w*0.35, h*0.42, w*0.035, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.65, h*0.42, w*0.035, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#d9945a'; ctx.beginPath(); ctx.moveTo(w*0.5, h*0.44); ctx.lineTo(w*0.45, h*0.58); ctx.lineTo(w*0.55, h*0.56); ctx.fill();
+            ctx.fillStyle = '#c62828'; ctx.font = `bold ${Math.floor(w*0.07)}px sans-serif`; ctx.fillText(`ИИ`, w*0.02, h*0.08);
+        }
+        
+        function drawAI3(ctx, w, h) {
+            ctx.fillStyle = '#e5ddd0'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#f5c6a0'; ctx.beginPath(); ctx.ellipse(w/2, h/2, w*0.28, h*0.36, 0.08, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(w*0.34, h*0.41, w*0.07, h*0.058, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.66, h*0.41, w*0.07, h*0.058, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2a4a2a'; ctx.beginPath(); ctx.arc(w*0.34, h*0.41, w*0.036, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.66, h*0.41, w*0.036, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#b84c4c'; ctx.beginPath(); ctx.ellipse(w*0.5, h*0.67, w*0.07, h*0.025, 0.2, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#c62828'; ctx.font = `bold ${Math.floor(w*0.07)}px sans-serif`; ctx.fillText(`ИИ`, w*0.02, h*0.08);
+        }
+        
+        function drawAI4(ctx, w, h) {
+            ctx.fillStyle = '#ddd5c8'; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = '#e8b088'; ctx.beginPath(); ctx.ellipse(w*0.51, h*0.51, w*0.29, h*0.37, -0.04, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#f2f2ea'; ctx.beginPath(); ctx.ellipse(w*0.33, h*0.42, w*0.065, h*0.053, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w*0.64, h*0.43, w*0.075, h*0.06, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(w*0.33, h*0.42, w*0.03, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w*0.64, h*0.43, w*0.04, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#cc8866'; ctx.fillRect(w*0.1, h*0.75, w*0.8, 2);
+            ctx.fillStyle = '#c62828'; ctx.font = `bold ${Math.floor(w*0.07)}px sans-serif`; ctx.fillText(`ИИ`, w*0.02, h*0.08);
+        }
+
+        // ========== СОЗДАЁМ 10 РАЗНЫХ ПАР ==========
+        const allQuestions = [
+            { real: drawReal1, ai: drawAI1, hint: "👁️ У реального человека глаза симметричны. У ИИ — разного размера." },
+            { real: drawReal2, ai: drawAI2, hint: "👃 У реального человека нос естественный. У ИИ — деформирован." },
+            { real: drawReal3, ai: drawAI3, hint: "👄 У реального ребёнка естественная улыбка. У ИИ — странная форма рта." },
+            { real: drawReal1, ai: drawAI2, hint: "👁️ Обратите внимание на симметрию глаз и форму носа." },
+            { real: drawReal2, ai: drawAI3, hint: "👄 Сравните форму рта и естественность мимики." },
+            { real: drawReal3, ai: drawAI1, hint: "👀 У реального ребёнка глаза симметричны и есть блеск." },
+            { real: drawReal1, ai: drawAI3, hint: "🎯 Реальное лицо имеет естественные черты, ИИ — искажения." },
+            { real: drawReal2, ai: drawAI1, hint: "✨ У реального человека есть блеск в обоих глазах." },
+            { real: drawReal3, ai: drawAI2, hint: "👃 Форма носа у реального человека естественна." },
+            { real: drawReal1, ai: drawAI4, hint: "📏 Асимметрия — главный признак ИИ-генерации." }
+        ];
+
+        let currentRound = 0;
+        let score = 0;
+        let realPosition = 0;
+        let currentQuestions = [];
+
+        let canvas0, canvas1, ctx0, ctx1;
+        let feedbackTitle, feedbackText, feedbackIcon;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('nextBtn').addEventListener('click', nextRound);
+            document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+            document.getElementById('shareBtn').addEventListener('click', shareResult);
+            
+            // Кнопка копирования номера
+            document.getElementById('copyBtn').addEventListener('click', () => {
+                const phone = document.getElementById('phoneNum').textContent;
+                navigator.clipboard.writeText(phone).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    const originalText = btn.textContent;
+                    btn.textContent = '✅ Скопировано!';
+                    btn.style.background = 'rgba(0,255,136,0.3)';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                    }, 2000);
+                });
+            });
+            
+            canvas0 = document.getElementById('canvas0');
+            canvas1 = document.getElementById('canvas1');
+            ctx0 = canvas0.getContext('2d');
+            ctx1 = canvas1.getContext('2d');
+            
+            feedbackTitle = document.getElementById('feedback-title');
+            feedbackText = document.getElementById('feedback-text');
+            feedbackIcon = document.getElementById('feedback-icon');
+            
+            document.querySelectorAll('.img-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const choice = parseInt(card.dataset.choice);
+                    if (!isNaN(choice)) makeChoice(choice);
+                });
+            });
+        });
+
+        function startGame() {
+            currentQuestions = [...allQuestions];
+            for (let i = currentQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentQuestions[i], currentQuestions[j]] = [currentQuestions[j], currentQuestions[i]];
+            }
+            currentQuestions = currentQuestions.slice(0, 10);
+            
+            currentRound = 0;
+            score = 0;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('score').textContent = `🎯 Счёт: ${score}`;
+            
+            loadRound();
+        }
+
+        function loadRound() {
+            if (currentRound >= currentQuestions.length) {
+                showResults();
+                return;
+            }
+            
+            const question = currentQuestions[currentRound];
+            const w = canvas0.width, h = canvas0.height;
+            realPosition = Math.random() < 0.5 ? 0 : 1;
+            
+            ctx0.clearRect(0, 0, w, h);
+            ctx1.clearRect(0, 0, w, h);
+            
+            if (realPosition === 0) {
+                question.real(ctx0, w, h);
+                question.ai(ctx1, w, h);
+            } else {
+                question.ai(ctx0, w, h);
+                question.real(ctx1, w, h);
+            }
+            
+            document.getElementById('progress').textContent = `Раунд ${currentRound + 1}/${currentQuestions.length}`;
+            
+            document.querySelectorAll('.img-card').forEach(card => {
+                card.style.borderColor = '#ddd';
+                card.style.boxShadow = '0 5px 20px rgba(0,0,0,0.3)';
+            });
+            
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('feedback-screen').classList.add('hidden');
+        }
+
+        function makeChoice(choice) {
+            const isCorrect = (choice === realPosition);
+            
+            if (isCorrect) {
+                score++;
+                document.getElementById('score').textContent = `🎯 Счёт: ${score}`;
+                feedbackIcon.textContent = '✅';
+                feedbackTitle.textContent = 'ПРАВИЛЬНО!';
+                feedbackTitle.style.color = '#00ff88';
+            } else {
+                feedbackIcon.textContent = '❌';
+                feedbackTitle.textContent = 'ОШИБКА!';
+                feedbackTitle.style.color = '#ff4b4b';
+            }
+            
+            const question = currentQuestions[currentRound];
+            feedbackText.innerHTML = `<strong>📖 ОБУЧЕНИЕ:</strong><br><br>${question.hint}<br><br><em>💡 Совет: сравнивайте симметрию, блеск в глазах, естественность черт и наличие артефактов.</em>`;
+            
+            const selectedCard = document.querySelector(`.img-card[data-choice="${choice}"]`);
+            if (selectedCard) {
+                selectedCard.style.borderColor = isCorrect ? '#00ff88' : '#ff4b4b';
+                selectedCard.style.boxShadow = `0 0 20px ${isCorrect ? '#00ff88' : '#ff4b4b'}`;
+            }
+            
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('feedback-screen').classList.remove('hidden');
+        }
+
+        function nextRound() {
+            currentRound++;
+            loadRound();
+        }
+
+        function showResults() {
+            const percent = Math.round((score / currentQuestions.length) * 100);
+            let rank = '', rankIcon = '', description = '', rankClass = '';
+            
+            if (percent >= 90) { 
+                rankIcon = '🏆'; 
+                rank = 'ЭКСПЕРТ'; 
+                rankClass = 'result-expert';
+                description = '🏆 Вы отлично различаете дипфейки! Ваш глаз тренирован, а внимание к деталям — на высоте. Так держать! ✨';
+            } else if (percent >= 70) { 
+                rankIcon = '👍'; 
+                rank = 'ПРОДВИНУТЫЙ'; 
+                rankClass = 'result-advanced';
+                description = '👍 Хороший результат! Вы замечаете большинство артефактов ИИ, но иногда ошибаетесь. Продолжайте тренироваться! 📈';
+            } else if (percent >= 50) { 
+                rankIcon = '📚'; 
+                rank = 'УЧЕНИК'; 
+                rankClass = 'result-learner';
+                description = '📚 Вы на правильном пути, но нейросети всё ещё могут вас обманывать. Изучайте типичные артефакты ИИ и проходите тест снова! 🎯';
+            } else { 
+                rankIcon = '⚠️'; 
+                rank = 'В ГРУППЕ РИСКА'; 
+                rankClass = 'result-risk';
+                description = '⚠️ Вы уязвимы для визуальных дипфейков. Срочно тренируйте внимательность! Обращайте внимание на симметрию глаз, форму лица и наличие артефактов. 🔍';
+            }
+            
+            const finalRankEl = document.getElementById('final-rank');
+            finalRankEl.innerHTML = `${rankIcon} ${rank}`;
+            finalRankEl.className = rankClass;
+            finalRankEl.style.fontSize = '2rem';
+            finalRankEl.style.textAlign = 'center';
+            
+            document.getElementById('final-percent').textContent = `${percent}%`;
+            document.getElementById('final-score').textContent = `${score} из ${currentQuestions.length}`;
+            document.getElementById('final-desc').innerHTML = description;
+            
+            document.getElementById('feedback-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+        }
+
+        function shareResult() {
+            const percent = Math.round((score / currentQuestions.length) * 100);
+            navigator.clipboard.writeText(`Я прошёл тест "Анти-ИИ Визометр" и набрал ${score}/10 (${percent}%)! Проверь и ты →`);
+            alert('✅ Результат скопирован в буфер обмена!');
+        }
+    </script>
+</body>
+</html>
