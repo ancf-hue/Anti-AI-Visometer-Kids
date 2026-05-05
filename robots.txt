@@ -1,0 +1,28 @@
+# robots.txt для Анти-ИИ Визометр (Детский)
+# Опубликовано: 2026-05-05
+# Адрес: https://anti-ai-visometer-kids.vercel.app/
+
+User-agent: *
+Allow: /
+
+# Запрещаем индексацию служебных страниц (если появятся)
+Disallow: /admin/
+Disallow: /private/
+Disallow: /temp/
+Disallow: /backup/
+
+# Указываем путь к карте сайта
+Sitemap: https://anti-ai-visometer-kids.vercel.app/sitemap.xml
+
+# Правила для разных поисковых систем (опционально)
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Yandex
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
