@@ -1,4 +1,5 @@
-<img width="952" height="955" alt="P6IEhjQ" src="https://github.com/user-attachments/assets/23fa1432-f7f7-4c79-a705-7b9915270a8e" />
+<img width="800" height="600" alt="ai_image" src="https://github.com/user-attachments/assets/3116d19d-a9f6-48d7-94e7-be66c4224fe3" />
+
 # 👁️ АНТИ-ИИ ВИЗОМЕТР
 
 ## 🧸 Для детей и родителей
@@ -77,3 +78,7 @@
 "Анти-ИИ Визометр - детская версия"
 
 🌐 Готовый адрес https://anti-ai-visometer-kids.vercel.app/
+
+📄 Лицензия
+Код доступен для изучения, модификации и некоммерческого использования.
+Коммерческое распространение или интеграция в платные сервисы допускается только с письменного согласия автора.
